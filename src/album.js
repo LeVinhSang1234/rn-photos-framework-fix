@@ -1,7 +1,16 @@
-import NativeApi from "./index";
+import { NativeModules, Platform } from "react-native";
+import ImageAsset from "./image-asset";
 import uuidGenerator from "./uuid-generator";
 import { assetArrayObserverHandler } from "./change-observer-handler";
 import EventEmitter from "../event-emitter";
+
+const RNPFManager = NativeModules.RNPFManager;
+if (!RNPFManager && Platform.OS === "ios") {
+  throw new Error(
+    "Could not find rn-photos-framework's native module. It seems it's not linked correctly in your xcode-project."
+  );
+}
+const ImageAssetApi = new ImageAsset();
 
 export default class Album extends EventEmitter {
   constructor(obj, fetchOptions, eventEmitter) {
@@ -9,7 +18,7 @@ export default class Album extends EventEmitter {
     this._fetchOptions = fetchOptions;
     Object.assign(this, obj);
     if (this.previewAssets) {
-      this.previewAssets = this.previewAssets.map(NativeApi.createJsAsset);
+      this.previewAssets = this.previewAssets.map(ImageAssetApi.createJsAsset);
       if (this.previewAssets.length) {
         this.previewAsset = this.previewAssets[0];
       }
@@ -24,7 +33,7 @@ export default class Album extends EventEmitter {
               return assetArrayObserverHandler(
                 changeDetails,
                 assetArray,
-                NativeApi.createJsAsset,
+                ImageAssetApi.createJsAsset,
                 (indecies, callback) => {
                   //The update algo has requested new assets.
                   return this.newAssetsRequested(
@@ -93,7 +102,16 @@ export default class Album extends EventEmitter {
   }
 
   stopTracking() {
-    return NativeApi.stopTracking(this._cacheKey);
+    return new Promise((resolve, reject) => {
+      if (this._cacheKey) {
+        return resolve(RNPFManager.stopTracking(this._cacheKey));
+      } else {
+        resolve({
+          success: true,
+          status: "was-not-tracked",
+        });
+      }
+    });
   }
 
   getAssets(params) {
@@ -106,11 +124,29 @@ export default class Album extends EventEmitter {
     if (trackAssets && !this._cacheKey) {
       this._cacheKey = uuidGenerator();
     }
-    return NativeApi.getAssets({
+    return this.getAssets({
       fetchOptions: this._fetchOptions,
       ...params,
       _cacheKey: this._cacheKey,
       albumLocalIdentifier: this.localIdentifier,
+    });
+  }
+
+  getAssets(params) {
+    if (
+      params &&
+      params.fetchOptions &&
+      params.assetDisplayStartToEnd === undefined &&
+      params.fetchOptions.sortDescriptors &&
+      params.fetchOptions.sortDescriptors.length
+    ) {
+      params.assetDisplayStartToEnd = true;
+    }
+    return RNPFManager.getAssets(params).then((assetsResponse) => {
+      return {
+        assets: assetsResponse.assets.map(this.createJsAsset),
+        includesLastAsset: assetsResponse.includesLastAsset,
+      };
     });
   }
 
@@ -120,11 +156,13 @@ export default class Album extends EventEmitter {
     if (trackAssets && !this._cacheKey) {
       this._cacheKey = uuidGenerator();
     }
-    return NativeApi.getAssetsWithIndecies({
+    return RNPFManager.getAssetsWithIndecies({
       fetchOptions: this._fetchOptions,
       ...params,
       _cacheKey: this._cacheKey,
       albumLocalIdentifier: this.localIdentifier,
+    }).then((assetsResponse) => {
+      return assetsResponse.assets.map(this.createJsAsset);
     });
   }
 
@@ -133,7 +171,7 @@ export default class Album extends EventEmitter {
   }
 
   addAssets(assets) {
-    return NativeApi.addAssetsToAlbum({
+    return RNPFManager.addAssetsToAlbum({
       assets: assets.map((asset) => asset.localIdentifier),
       _cacheKey: this._cacheKey,
       albumLocalIdentifier: this.localIdentifier,
@@ -145,7 +183,7 @@ export default class Album extends EventEmitter {
   }
 
   removeAssets(assets) {
-    return NativeApi.removeAssetsFromAlbum({
+    return RNPFManager.removeAssetsFromAlbum({
       assets: assets.map((asset) => asset.localIdentifier),
       _cacheKey: this._cacheKey,
       albumLocalIdentifier: this.localIdentifier,
@@ -153,7 +191,7 @@ export default class Album extends EventEmitter {
   }
 
   updateTitle(newTitle) {
-    return NativeApi.updateAlbumTitle({
+    return RNPFManager.updateAlbumTitle({
       newTitle: newTitle,
       _cacheKey: this._cacheKey,
       albumLocalIdentifier: this.localIdentifier,
@@ -161,7 +199,7 @@ export default class Album extends EventEmitter {
   }
 
   delete() {
-    return NativeApi.deleteAlbums([this]);
+    return RNPFManager.deleteAlbums([this.localIdentifier]);
   }
 
   onChange(cb) {
