@@ -1,18 +1,1 @@
-import Asset from './asset';
-
-export default class VideoAsset extends Asset {
-    constructor(assetObj, options) {
-        super(assetObj, options);
-    }
-
-    get video() {
-        if (this._videoRef) {
-            return this._videoRef;
-        }
-        this._videoRef = {
-            uri : this.uri,
-            type : ''
-        };
-        return this._videoRef;
-    }
-}
+import Asset from"./asset";export default class VideoAsset extends Asset{constructor(e,s){super(e,s)}get video(){return this._videoRef||(this._videoRef={uri:this.uri,type:""}),this._videoRef}}

@@ -1,18 +1,1 @@
-import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
-
-export default function videoPropsResolver(props) {
-    const source = resolveAssetSource(props) || {};
-    let {uri, type} = source;
-    if (uri && uri.match(/^\//)) {
-        uri = `file://${uri}`;
-    }
-
-    const isNetwork = !!(uri && uri.match(/^https?:/));
-    const isAsset = !!(uri && uri.match(/^(assets-library|file):/));
-    return {
-        isAsset,
-        isNetwork,
-        uri,
-        type
-    };
-}
+import resolveAssetSource from"react-native/Libraries/Image/resolveAssetSource";export default function videoPropsResolver(e){const t=resolveAssetSource(e)||{};let{uri:s,type:r}=t;s&&s.match(/^\//)&&(s=`file://${s}`);const o=!(!s||!s.match(/^https?:/));return{isAsset:!(!s||!s.match(/^(assets-library|file):/)),isNetwork:o,uri:s,type:r}}
