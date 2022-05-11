@@ -1,6 +1,14 @@
+
 # OSX
 #
 .DS_Store
+
+# node.js
+#
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
 
 # Xcode
 #
@@ -22,20 +30,24 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 
-# Android/IJ
+
+# Android/IntelliJ
 #
+build/
 .idea
 .gradle
 local.properties
+*.iml
 
-# node.js
-#
-node_modules/
-npm-debug.log
+# BUCK
+buck-out/
+\.buckd/
+*.keystore
 
-article-web/article-web.zip
-example/react-native-photos-framework/src/
-
-# REMINDER: do not edit Icon^M^M Carriage Returns
-Icon
-# END REMINDER
+# Carthage
+ios/Carthage/Checkouts
+!ios/Carthage/Build
+assets/
+tsconfig.json
+.vscode
+.gitignore
